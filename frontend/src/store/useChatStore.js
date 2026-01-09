@@ -76,13 +76,21 @@ export const useChatStore = create((set, get) => ({
 			isOptimistic: true, // flag to identify optimistic message (optional)
 		};
 
-		set({ messages: [...messages, optimisticMessage] });
+		set((state) => ({ messages: [...state.messages, optimisticMessage] }));
 
 		try {
-			const res = await axiosInstance.post(`messages/send/${selectedUser._id}`,messageData);
-			set({ messages: messages.concat(res.data) });
+			const res = await axiosInstance.post(`messages/send/${selectedUser._id}`, messageData);
+			set((state) => {
+				const idx = state.messages.findIndex((m) => m._id === tempId);
+				if (idx === -1) return { messages: [...state.messages, res.data] };
+				const next = state.messages.slice();
+				next[idx] = res.data;
+				return { messages: next };
+			});
 		} catch (error) {
-			set({ messages: messages });
+			set((state) => ({ 
+				messages: state.messages.filter((m) => m._id !== tempId) 
+			}));
 			toast.error(error.response?.data?.message || "Something went wrong");
 		}
 	},
