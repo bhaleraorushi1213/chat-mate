@@ -1,4 +1,5 @@
 import cloudinary from "../lib/cloudinary.js";
+import { getReceiverSocketId, io } from "../lib/socket.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 
@@ -67,6 +68,12 @@ export const sendMessage = async (req, res) => {
 		});
 
 		const savedMessage = await newMessage.save();
+
+		const receiverSocketId = getReceiverSocketId(receiverId);
+		if(receiverSocketId) {
+			io.to(receiverSocketId).emit("newMessage", savedMessage);
+		}
+
 		res.status(200).json(savedMessage);
 	} catch (error) {
 		console.log("Error in sendMessage controller:", error);
