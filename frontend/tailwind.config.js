@@ -8,6 +8,9 @@ export default {
 			animation: {
 				border: "border 4s linear infinite",
 			},
+			fontFamily: {
+        vietnam: ["'Be Vietnam Pro'", "sans-serif"],
+      },
 			keyframes: {
 				border: {
 					to: { "--border-angle": "360deg" },
