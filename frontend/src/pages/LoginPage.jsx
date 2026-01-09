@@ -73,7 +73,7 @@ function LoginPage() {
                 </form>
 
                 <div className="mt-6 text-center">
-                  <Link to="/login" className="auth-link">
+                  <Link to="/signup" className="auth-link">
                     Don't have an account? Signup
                   </Link>
                 </div>
