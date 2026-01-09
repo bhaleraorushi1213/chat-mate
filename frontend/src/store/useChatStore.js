@@ -11,7 +11,7 @@ export const useChatStore = create((set, get) => ({
 	selectedUser: null,
 	isUsersLoading: false,
 	isMessagesLoading: false,
-	isSoundEnabled: JSON.parse(localStorage.getItem("isSoundEnabled")) === "true",
+	isSoundEnabled: JSON.parse(localStorage.getItem("isSoundEnabled")) === true,
 
 	toggleSound: () => {
 		localStorage.setItem("isSoundEnabled", !get().isSoundEnabled);
@@ -79,7 +79,10 @@ export const useChatStore = create((set, get) => ({
 		set((state) => ({ messages: [...state.messages, optimisticMessage] }));
 
 		try {
-			const res = await axiosInstance.post(`messages/send/${selectedUser._id}`, messageData);
+			const res = await axiosInstance.post(
+				`messages/send/${selectedUser._id}`,
+				messageData
+			);
 			set((state) => {
 				const idx = state.messages.findIndex((m) => m._id === tempId);
 				if (idx === -1) return { messages: [...state.messages, res.data] };
@@ -88,10 +91,36 @@ export const useChatStore = create((set, get) => ({
 				return { messages: next };
 			});
 		} catch (error) {
-			set((state) => ({ 
-				messages: state.messages.filter((m) => m._id !== tempId) 
+			set((state) => ({
+				messages: state.messages.filter((m) => m._id !== tempId),
 			}));
 			toast.error(error.response?.data?.message || "Something went wrong");
 		}
+	},
+
+	subscribeToMessages: () => {
+		const { selectedUser, isSoundEnabled } = get();
+		if (!selectedUser) return;
+
+		const socket = useAuthStore.getState().socket;
+
+		socket.on("newMessage", (newMessage) => {
+			const currentMessages = get().messages;
+
+			if ( newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id ) {
+				set({ messages: [...currentMessages, newMessage] });
+
+				if (isSoundEnabled) {
+					const notificationSound = new Audio("/sounds/notification.mp3");
+					notificationSound.currentTime = 0;
+					notificationSound.play().catch((err) => console.log("Error playing sound:", err));
+				}
+			}
+		});
+	},
+
+	unsubscribeToMessages: () => {
+		const socket = useAuthStore.getState().socket;
+		socket.off("newMessage");
 	},
 }));
